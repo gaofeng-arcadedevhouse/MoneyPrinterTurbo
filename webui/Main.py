@@ -644,79 +644,27 @@ with middle_panel:
     with st.container(border=True):
         st.write(tr("Audio Settings"))
 
-        # 添加TTS服务器选择下拉框
-        tts_servers = [
-            ("azure-tts-v1", "Azure TTS V1"),
-            ("azure-tts-v2", "Azure TTS V2"),
-            ("siliconflow", "SiliconFlow TTS"),
-            ("gemini-tts", "Google Gemini TTS"),
-        ]
-
-        # 获取保存的TTS服务器，默认为v1
-        saved_tts_server = config.ui.get("tts_server", "azure-tts-v1")
-        saved_tts_server_index = 0
-        for i, (server_value, _) in enumerate(tts_servers):
-            if server_value == saved_tts_server:
-                saved_tts_server_index = i
-                break
-
-        selected_tts_server_index = st.selectbox(
-            tr("TTS Servers"),
-            options=range(len(tts_servers)),
-            format_func=lambda x: tts_servers[x][1],
-            index=saved_tts_server_index,
-        )
-
-        selected_tts_server = tts_servers[selected_tts_server_index][0]
-        config.ui["tts_server"] = selected_tts_server
-
-        # 根据选择的TTS服务器获取声音列表
-        filtered_voices = []
-
-        if selected_tts_server == "siliconflow":
-            # 获取硅基流动的声音列表
-            filtered_voices = voice.get_siliconflow_voices()
-        elif selected_tts_server == "gemini-tts":
-            # 获取Gemini TTS的声音列表
-            filtered_voices = voice.get_gemini_voices()
-        else:
-            # 获取Azure的声音列表
-            all_voices = voice.get_all_azure_voices(filter_locals=None)
-
-            # 根据选择的TTS服务器筛选声音
-            for v in all_voices:
-                if selected_tts_server == "azure-tts-v2":
-                    # V2版本的声音名称中包含"v2"
-                    if "V2" in v:
-                        filtered_voices.append(v)
-                else:
-                    # V1版本的声音名称中不包含"v2"
-                    if "V2" not in v:
-                        filtered_voices.append(v)
+        # 阿里云 TTS 配置
+        st.info("使用阿里云 Qwen3-TTS-Flash 语音合成")
+        
+        # 获取阿里云声音列表
+        filtered_voices = voice.get_aliyun_voices()
 
         friendly_names = {
-            v: v.replace("Female", tr("Female"))
+            v: v.replace("aliyun:", "")
+            .replace("Female", tr("Female"))
             .replace("Male", tr("Male"))
-            .replace("Neural", "")
+            .replace("-Chinese", " (中文)")
+            .replace("-English", " (英文)")
             for v in filtered_voices
         }
 
         saved_voice_name = config.ui.get("voice_name", "")
         saved_voice_name_index = 0
 
-        # 检查保存的声音是否在当前筛选的声音列表中
+        # 检查保存的声音是否在当前列表中
         if saved_voice_name in friendly_names:
             saved_voice_name_index = list(friendly_names.keys()).index(saved_voice_name)
-        else:
-            # 如果不在，则根据当前UI语言选择一个默认声音
-            for i, v in enumerate(filtered_voices):
-                if v.lower().startswith(st.session_state["ui_language"].lower()):
-                    saved_voice_name_index = i
-                    break
-
-        # 如果没有找到匹配的声音，使用第一个声音
-        if saved_voice_name_index >= len(friendly_names) and friendly_names:
-            saved_voice_name_index = 0
 
         # 确保有声音可选
         if friendly_names:
@@ -734,12 +682,7 @@ with middle_panel:
             params.voice_name = voice_name
             config.ui["voice_name"] = voice_name
         else:
-            # 如果没有声音可选，显示提示信息
-            st.warning(
-                tr(
-                    "No voices available for the selected TTS server. Please select another server."
-                )
-            )
+            st.warning(tr("No voices available"))
             params.voice_name = ""
             config.ui["voice_name"] = ""
 
@@ -762,7 +705,7 @@ with middle_panel:
                 )
                 # if the voice file generation failed, try again with a default content.
                 if not sub_maker:
-                    play_content = "This is a example voice. if you hear this, the voice synthesis failed with the original content."
+                    play_content = "这是一段测试语音，如果您听到这段话，说明语音合成测试成功。"
                     sub_maker = voice.tts(
                         text=play_content,
                         voice_name=voice_name,
@@ -776,51 +719,23 @@ with middle_panel:
                     if os.path.exists(audio_file):
                         os.remove(audio_file)
 
-        # 当选择V2版本或者声音是V2声音时，显示服务区域和API key输入框
-        if selected_tts_server == "azure-tts-v2" or (
-            voice_name and voice.is_azure_v2_voice(voice_name)
-        ):
-            saved_azure_speech_region = config.azure.get("speech_region", "")
-            saved_azure_speech_key = config.azure.get("speech_key", "")
-            azure_speech_region = st.text_input(
-                tr("Speech Region"),
-                value=saved_azure_speech_region,
-                key="azure_speech_region_input",
-            )
-            azure_speech_key = st.text_input(
-                tr("Speech Key"),
-                value=saved_azure_speech_key,
-                type="password",
-                key="azure_speech_key_input",
-            )
-            config.azure["speech_region"] = azure_speech_region
-            config.azure["speech_key"] = azure_speech_key
-
-        # 当选择硅基流动时，显示API key输入框和说明信息
-        if selected_tts_server == "siliconflow" or (
-            voice_name and voice.is_siliconflow_voice(voice_name)
-        ):
-            saved_siliconflow_api_key = config.siliconflow.get("api_key", "")
-
-            siliconflow_api_key = st.text_input(
-                tr("SiliconFlow API Key"),
-                value=saved_siliconflow_api_key,
-                type="password",
-                key="siliconflow_api_key_input",
-            )
-
-            # 显示硅基流动的说明信息
-            st.info(
-                tr("SiliconFlow TTS Settings")
-                + ":\n"
-                + "- "
-                + tr("Speed: Range [0.25, 4.0], default is 1.0")
-                + "\n"
-                + "- "
-                + tr("Volume: Uses Speech Volume setting, default 1.0 maps to gain 0")
-            )
-
-            config.siliconflow["api_key"] = siliconflow_api_key
+        # 阿里云 API Key 配置
+        saved_aliyun_api_key = config.aliyun.get("api_key", "")
+        aliyun_api_key = st.text_input(
+            tr("Aliyun API Key"),
+            value=saved_aliyun_api_key,
+            type="password",
+            key="aliyun_api_key_input",
+        )
+        
+        # 显示阿里云配置说明
+        st.caption(
+            "获取 API Key: https://dashscope.console.aliyun.com/apiKey"
+        )
+        
+        # 将 API Key 保存到 app 配置中（voice.py 从 app 读取）
+        config.app["aliyun_api_key"] = aliyun_api_key
+        config.aliyun["api_key"] = aliyun_api_key
 
         params.voice_volume = st.selectbox(
             tr("Speech Volume"),
