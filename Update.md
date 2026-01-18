@@ -46,5 +46,49 @@
 - 获取地址：https://dashscope.console.aliyun.com/apiKey
 - 在配置文件 `config.toml` 或 WebUI 中设置 `aliyun_api_key`
 
-### 后续计划
-- [ ] 视频素材来源限制：移除抖音/B站/小红书，保留 Pexels/Pixabay/本地上传
+---
+
+## 2026-01-18 混合素材检索功能
+
+### 概述
+新增本地素材库与第三方素材库（Pexels/Pixabay）的**混合检索**功能，优先使用本地素材，减少网络请求和版权风险。
+
+### 功能特点
+1. **本地素材优先**：搜索时优先匹配本地素材库
+2. **LLM 智能匹配**：使用 AI 判断素材与搜索词的相关性
+3. **标签系统**：通过文件名中的标签进行语义匹配
+4. **自动降级**：本地无匹配时自动搜索第三方
+
+### 素材命名规范
+```
+格式：视频名称(标签1,标签2,标签3).mp4
+
+示例：
+├── 蓝天白云(sky,cloud,nature,blue).mp4
+├── 城市夜景(city,night,building,light).mp4
+└── 科技数据(technology,data,digital,code).mp4
+```
+
+### 配置说明
+
+在 `config.toml` 中添加：
+```toml
+# 启用混合搜索
+enable_hybrid_search = true
+
+# 本地素材库目录
+local_material_library = "G:/素材库/videos"
+```
+
+### 代码变更
+
+**`app/services/material.py`**
+- 新增 `parse_material_tags()` 解析文件名标签
+- 新增 `scan_local_library()` 扫描本地素材库
+- 新增 `match_local_material_with_llm()` LLM 智能匹配
+- 新增 `search_videos_hybrid()` 混合搜索入口
+- 修改 `download_videos()` 集成混合搜索
+
+**`config.example.toml`**
+- 新增 `enable_hybrid_search` 配置项
+- 新增 `local_material_library` 配置项

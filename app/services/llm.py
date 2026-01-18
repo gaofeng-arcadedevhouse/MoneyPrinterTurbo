@@ -411,13 +411,17 @@ Generate {amount} search terms for stock videos, depending on the subject of a v
 
 ## Constrains:
 1. the search terms are to be returned as a json-array of strings.
-2. each search term should consist of 1-3 words, always add the main subject of the video.
+2. each search term should consist of 1-3 words.
 3. you must only return the json-array of strings. you must not return anything else. you must not return the script.
 4. the search terms must be related to the subject of the video.
 5. reply with english search terms only.
+6. IMPORTANT: Focus on scenes, objects, environments, and actions. Avoid terms about specific people or human characteristics.
+7. Use precise technical or scientific terms when possible (e.g., "laboratory equipment", "scientific research", "chemical experiment").
+8. Avoid ambiguous terms that could match unrelated content. For example, use "carbon material" or "dark powder" instead of "carbon black".
+9. Prefer terms like: laboratory, experiment, research, equipment, technology, science, nature, abstract, etc.
 
 ## Output Example:
-["search term 1", "search term 2", "search term 3","search term 4","search term 5"]
+["laboratory equipment", "scientific research", "chemical experiment", "microscope analysis", "lab technician working"]
 
 ## Context:
 ### Video Subject
@@ -427,6 +431,7 @@ Generate {amount} search terms for stock videos, depending on the subject of a v
 {video_script}
 
 Please note that you must use English for generating video search terms; Chinese is not accepted.
+Generate search terms that will find relevant stock footage without ambiguity.
 """.strip()
 
     logger.info(f"subject: {video_subject}")

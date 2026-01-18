@@ -18,6 +18,16 @@ pexels_api_keys = ["DqsicMWLa4wR8Amvq0Z6TTt2IkRKSvbezLcVdwZGBbN5GDb5OwVfaff6"]
 # 特别注意格式，Key 用英文双引号括起来，多个Key用逗号隔开
 pixabay_api_keys = []
 
+# ==================== 本地素材库混合搜索 ====================
+# 启用混合搜索：优先匹配本地素材库，无匹配时再搜索 Pexels/Pixabay
+enable_hybrid_search = false
+
+# 本地素材库目录
+# 素材文件命名格式：视频名称(标签1,标签2,标签3).mp4
+# 示例：蓝天白云(sky,cloud,nature).mp4
+local_material_library = ""
+
+
 # 支持的提供商 (Supported providers):
 #   openai
 #   moonshot    (月之暗面)
